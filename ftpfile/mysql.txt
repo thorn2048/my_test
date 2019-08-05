@@ -1,0 +1,350 @@
+创建索引字段
+：create index 索引名 on 表名(字段名);
+
+索引分类
+  1普通索引：
+  2 唯一索引
+  3 主键索引
+  4 外键索引
+
+ 普通索引
+    一个表中可以有多个index字段
+    字段值可以重复，也可以为NULL
+    把经常查询条件的字段设置为index字段
+    index字段的key标志位：MUL
+   
+创建表时 创建索引
+create table t1(
+... ...,
+... ...,
+index(id),
+index(name)
+);
+
+在已有表中添加索引
+create index 索引名 on 表名（字段名）; 
+
+
+查看普通索引
+desc 表名 ； key 为MUL
+show index from 表名\G；
+
+删除索引
+
+drop index 索引名 on 表名;
+
+
+----------------------------------------------------------------------
+唯一索引 （unique）  Non_unique 为0；
+
+ 一个表名中可以有多个unique字段
+ unique字段里面的值不允许重复
+ unique的key标志是UNI
+
+创建同（同index）
+
+unique(字段名)
+
+create unique index 索引名 on 表名（字段名）
+
+查看
+create index from 表名；
+
+-------------------------------------------------------------------------
+主键索引 primary key   自增长输性
+     1.一个表中只能有一个主键字段
+     2.对应字段的值不允许重复， 不能为空值NULL
+     3 主键字段为KEY为PRI
+     4 把表中唯一能够表示一条记录的字段设置为主键，通常把表中记录编号的字段设置为主键字段
+
+
+
+创建
+字段名 数据类型 primary key auto_increment,
+
+id int auto_increment,
+... ....
+primary key(id),
+
+删除
+ 先删除自增长类型  alter table t5 modify id int;
+ 然后删除主键   alter table t5 drop primary key;
+
+ 在已有表中添加主键 alter table 表名 add primary key(字段名)；
+-----------------------------------------------------------------------
+外键  两张表的参考字段数据类型一至
+被参考字段必须是key的一种，通常是primary key
+
+  定义
+   让当前表字段的值在另一个表的范围内选择
+
+
+语法
+foreign key(参考字段名)
+references 被参考表名（被参考字段名）
+on delete 级联动作
+on update 级联动
+
+表1 缴费表
+   学号     姓名            班级          缴费金额
+     1      唐伯虎           01                  28000
+    2      秋香              02                 22222
+
+
+学生信息表
+
+学号        姓名  缴费金额
+1          唐伯虎     28000
+2          秋香         20000
+
+缴费表：
+create table jf(
+id int primary key,
+name char(15),
+class char(5),
+money int
+)default charset=utf8;
+
+insert into jf values
+(1,'唐伯虎',"AID01",28000),
+(2,'秋香', 'AID01',20000),
+(3,'祝枝山','AID01',22000)
+
+学生信息表：
+create table bj(
+stu_id int,
+name char(15),
+money int,
+foreign key(stu_id)
+references jf(id)
+on delete cascade     同步
+on update cascade
+);
+
+
+
+级联动作：
+ cascade 主表删除 更新 被参考字段的值更新
+ restrict 当删除主表记录时，如果从表中有相关立联记录不允许删除
+ set null 当主表删除记录时 从表中相关联记录的参考字段值自动设置为NULL
+no action 同restrict
+
+ 删除外键
+alter table 表名 drop foreign key 外键名
+
+show create table 字段名  //显示外键名  CONSTRAINT
+
+
+已有表中添加外键
+  alter table 表名  add foreign key(参考字段名)
+  references 被参考表名(被参考字段名)
+on delete 级联动作
+on update 级联动作
+
+-------------------------------------------------------------------------------
+数据的导入
+1.把文件系统的内容导入到数据库中
+语法
+load data infile '文件名'
+into table 表名
+fields terminated by '分隔符'
+lines terminated by '\n'
+
+
+2 将要导入的文件考入到数据库的默认路径中
+   查看数据库默认路径  show variables like 'secure_file_priv';
+
+load data infile "D:/mysql_data/text.txt"
+into table t9
+fields terminated by ":"
+lines terminated by "\n"
+
+
+1.在数据库中创建对应的表
+2.把导入的文件复制到数据库的默认搜索路径中
+3 执行数据导入语序
+-------------------------------------------------------------
+数据导出
+将数据库表里的文件保存到系统文件里
+
+语法
+select ..from 表名 
+into outfile  '文件名'
+fields terminated by '分隔符'
+lines terminated by '\n';
+
+
+---------------------------------------------------------
+复制表
+create table 表名 select 查询命令；
+
+create table t10 select * from t9;
+
+
+赋值表结构
+create table 表名 select 查询命令 where false;
+复制表时不会吧原有表的key属性复制
+
+----------------------------------------------------------
+循环查询
+查询id值小于平均值的id值
+select id from stb
+ where id<(select avg(id) from stb)
+
+
+-----------------------------------
+链接查询
+内链接
+  从表中删除与其他被链接的表中没有匹配到的行
+  select 字段名 from 表1 
+  inner jion 表2 on 条件
+  inner jion 表3 on 条件
+
+
+select sheng.s_name,city.c_name from sheng
+inner join city
+on sheng.s_id = city.cfather_id;
+
+ select sheng.s_name,city.c_name,xian.x_name from sheng
+inner join city on sheng.s_id=city.cfather_id
+inner join xian on city.c_id=xian.xfather_id;
++--------+----------+--------+
+| s_name | c_name   | x_name |
++--------+----------+--------+
+| 河北省 | 石家庄市 | 正定县 |
+| 湖北省 | 武汉市   | 武昌区 |
++--------+----------+--------+
+
+
+
+外连接
+  左连接
+    以左表为主显示查询结果
+      select 字段名表 from 表1
+      left join 表2 on 条件
+
+
+select sheng.s_name,city.c_name,xian.x_name from sheng
+    -> left join city on sheng.s_id=city.cfather_id
+    -> left join xian on city.c_id=xian.xfather_id;
++--------+----------+--------+
+| s_name | c_name   | x_name |
++--------+----------+--------+
+| 河北省 | 石家庄市 | 正定县 |
+| 湖北省 | 武汉市   | 武昌区 |
+| 河北省 | 沧州市   | NULL   |
+| 河北省 | 廊坊市   | NULL   |
+| 陕西省 | 西安市   | NULL   |
+| 四川省 | 成都市   | NULL   |
+| 四川省 | 重庆市   | NULL   |
+| 广东省 | 广州市   | NULL   |
+| 山东省 | 济南市   | NULL   |
+| 河南省 | 郑州市   | NULL   |
+| 海南省 | NULL     | NULL   |
+| 云南省 | NULL     | NULL   |
+| 山西省 | NULL     | NULL   |
++--------+----------+--------+
+
+
+省:
+---+--------+--------+
+| id | s_id   | s_name |
++----+--------+--------+
+|  1 | 130000 | 河北省 |
+|  2 | 140000 | 陕西省 |
+|  3 | 150000 | 四川省 |
+|  4 | 160000 | 广东省 |
+|  5 | 170000 | 山东省 |
+|  6 | 180000 | 湖北省 |
+|  7 | 190000 | 河南省 |
+|  8 | 200000 | 海南省 |
+|  9 | 200001 | 云南省 |
+| 10 | 200002 | 山西省 |
+
+
+city
++----+--------+----------+------------+
+| id | c_id   | c_name   | cfather_id |
++----+--------+----------+------------+
+|  1 | 131100 | 石家庄市 |     130000 |
+|  2 | 131101 | 沧州市   |     130000 |
+|  3 | 131102 | 廊坊市   |     130000 |
+|  4 | 131103 | 西安市   |     140000 |
+|  5 | 131104 | 成都市   |     150000 |
+|  6 | 131105 | 重庆市   |     150000 |
+|  7 | 131106 | 广州市   |     160000 |
+|  8 | 131107 | 济南市   |     170000 |
+|  9 | 131108 | 武汉市   |     180000 |
+| 10 | 131109 | 郑州市   |     190000 |
+| 11 | 131110 | 北京市   |     320000 |
+| 12 | 131111 | 天津市   |     320000 |
+| 13 | 131112 | 上海市   |     320000 |
+| 14 | 131113 | 哈尔滨   |     320001 |
+| 15 | 131114 | 雄安新区 |     320002 |
++----+--------+----------+------------+
+
+县
++----+--------+----------+------------+
+| id | x_id   | x_name   | xfather_id |
++----+--------+----------+------------+
+|  1 | 132100 | 正定县   |     131100 |
+|  2 | 132102 | 浦东新区 |     131112 |
+|  3 | 132103 | 武昌区   |     131108 |
+|  4 | 132104 | 哈哈     |     131115 |
+|  5 | 132105 | 安新县   |     131114 |
+|  6 | 132106 | 容城县   |     131114 |
+|  7 | 132107 | 雄县     |     131114 |
+|  8 | 132108 | 嘎嘎     |     131115 |
++----+--------+----------+------------+
+
+
+select sheng.s_name,city.c_name,xian.x_name from sheng
+    -> right join city on sheng.s_id=city.cfather_id
+    -> left join xian on city.c_id=xian.xfather_id;
++--------+----------+----------+
+| s_name | c_name   | x_name   |
++--------+----------+----------+
+| 河北省 | 石家庄市 | 正定县   |
+| 湖北省 | 武汉市   | 武昌区   |
+| 河北省 | 沧州市   | NULL     |
+| 河北省 | 廊坊市   | NULL     |
+| 陕西省 | 西安市   | NULL     |
+| 四川省 | 成都市   | NULL     |
+| 四川省 | 重庆市   | NULL     |
+| 广东省 | 广州市   | NULL     |
+| 山东省 | 济南市   | NULL     |
+| 河南省 | 郑州市   | NULL     |
+| NULL   | 上海市   | 浦东新区 |
+| NULL   | 雄安新区 | 安新县   |
+| NULL   | 雄安新区 | 容城县   |
+| NULL   | 雄安新区 | 雄县     |
+| NULL   | 北京市   | NULL     |
+| NULL   | 天津市   | NULL     |
+| NULL   | 哈尔滨   | NULL     |
++--------+----------+----------+
+
+
+多表查询
+select *from 表名 
+符合迪科尔集
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
